@@ -1,0 +1,154 @@
+{
+ "id": "linux",
+ "title": "Linux",
+ "version": 1,
+ "sources": {
+  "tlcl": {
+   "title": "The Linux Command Line, William Shotts",
+   "url": "https://linuxcommand.org/tlcl.php",
+   "lic": "Книга распространяется бесплатно под лицензией Creative Commons (некоммерческая, без производных). В курсе только пересказ и ссылки.",
+   "role": "Основы оболочки и команд",
+   "provided": "Русское издание «Командная строка Linux. Полное руководство»"
+  },
+  "man7": {
+   "title": "Linux man-pages",
+   "url": "https://man7.org/linux/man-pages/",
+   "lic": "Свободные тексты, лицензия указана в каждой странице.",
+   "role": "Точные флаги и поведение команд",
+   "provided": "Оглавление всех страниц man7.org"
+  },
+  "fhs": {
+   "title": "Filesystem Hierarchy Standard",
+   "url": "https://refspecs.linuxfoundation.org/fhs.shtml",
+   "lic": "Открытый стандарт.",
+   "role": "Раскладка каталогов",
+   "provided": "FHS 3.0 и более ранние версии"
+  },
+  "kproc": {
+   "title": "Документация ядра: файловая система /proc",
+   "url": "https://docs.kernel.org/filesystems/proc.html",
+   "lic": "Документация ядра Linux (проверить условия конкретной страницы).",
+   "role": "Что лежит в /proc",
+   "provided": "Страница «The /proc Filesystem»"
+  },
+  "kernel": {
+   "title": "Документация ядра Linux",
+   "url": "https://docs.kernel.org/",
+   "lic": "Документация ядра Linux (проверить условия конкретной страницы).",
+   "role": "Ядро, модули, загрузка"
+  },
+  "archwiki": {
+   "title": "ArchWiki",
+   "url": "https://wiki.archlinux.org/",
+   "lic": "Свободная лицензия документации (проверить), с указанием источника.",
+   "role": "Понятные объяснения систем и служб",
+   "provided": "Installation guide, General recommendations, FAQ и другие"
+  },
+  "debian": {
+   "title": "The Debian Administrator's Handbook",
+   "url": "https://debian-handbook.info/",
+   "lic": "Свободная книга под лицензией Creative Commons (условия проверить на сайте книги). В курсе пересказ и ссылки.",
+   "role": "Системное администрирование: пакеты, службы, сеть, диски",
+   "note": "Книга про Debian: там dpkg и apt, а в ALT rpm и apt-get. Выписки с пометкой «отличие от ALT» показывают, где поведение другое. Не копируйте команды из книги в ALT без проверки.",
+   "provided": "Издание Debian Jessie, 522 стр. (часть глав по-русски, часть по-английски); команды Debian подходят к ALT по смыслу, но не по названиям"
+  },
+  "altwiki": {
+   "title": "ALT Wiki",
+   "url": "https://wiki.altlinux.org/",
+   "lic": "Вики ALT, лицензия CC-BY-SA-3.0 (если не указано иное). Пересказываем своими словами со ссылкой.",
+   "role": "Всё про ваш дистрибутив",
+   "provided": "Команды APT, Обновление ОС, FAQ, Tips, Features, Features-Specific, WINE, Печать, Stapler, Альт Образование 11"
+  },
+  "altdocs": {
+   "title": "Документация ALT",
+   "url": "https://docs.altlinux.org/",
+   "lic": "Документация ALT; текст не копируем.",
+   "role": "Руководства по системе",
+   "needs_file": true,
+   "provided": "Глава 4. Печать"
+  },
+  "altpkgs": {
+   "title": "Пакеты ALT (packages.altlinux.org)",
+   "url": "https://packages.altlinux.org/",
+   "lic": "Каталог пакетов; ссылка найдена поиском.",
+   "role": "Что есть в репозиториях",
+   "seen": true
+  },
+  "freedesktop": {
+   "title": "systemd: документация",
+   "url": "https://www.freedesktop.org/software/systemd/man/",
+   "lic": "Страницы руководства systemd; в курсе пересказ и ссылки.",
+   "role": "Службы, юниты, журнал"
+  },
+  "alta": {
+   "title": "Альта: рецепты и справочник команд",
+   "url": "",
+   "lic": "Репозиторий Альты (GPL-3.0). Часть рецептов адаптирована из «Моси» (CC BY-SA 4.0, © 2026 Останин В. В.); авторство указано у каждого рецепта. Рецепты ещё не проверены на живых ПК.",
+   "role": "Как это делается на практике в ALT",
+   "provided": "284 рецепта и 329 команд"
+  },
+  "eepm": {
+   "title": "Пакет eepm (epm) в ALT",
+   "url": "https://packages.altlinux.org/en/sisyphus/srpms/eepm/",
+   "lic": "Карточка пакета; ссылка найдена поиском.",
+   "role": "Единые команды управления пакетами",
+   "seen": true
+  }
+ },
+ "layers": [
+  {
+   "n": 1,
+   "id": "L1",
+   "title": "Первые шаги",
+   "blurb": "Терминал, оболочка, навигация, справка, пайпы.",
+   "file": "L1.json"
+  },
+  {
+   "n": 2,
+   "id": "L2",
+   "title": "Файлы и права",
+   "blurb": "Дерево каталогов, права, пользователи, поиск, /proc.",
+   "file": "L2.json"
+  },
+  {
+   "n": 3,
+   "id": "L3",
+   "title": "Пакеты",
+   "blurb": "rpm, apt-get, epm, репозитории, поломки, ядро и модули.",
+   "file": "L3.json"
+  },
+  {
+   "n": 4,
+   "id": "L4",
+   "title": "Процессы и службы",
+   "blurb": "ps, kill, systemd, journalctl, порты.",
+   "file": "L4.json"
+  }
+ ],
+ "upcoming": [
+  {
+   "n": 5,
+   "id": "L5",
+   "title": "Диски и файловые системы",
+   "blurb": "lsblk, mount, fstab, fsck, загрузчик."
+  },
+  {
+   "n": 6,
+   "id": "L6",
+   "title": "Сеть",
+   "blurb": "ip, DNS, ssh и ключи, подсети."
+  },
+  {
+   "n": 7,
+   "id": "L7",
+   "title": "Графика и сеанс",
+   "blurb": "X11, LightDM, KDE и XFCE, polkit."
+  },
+  {
+   "n": 8,
+   "id": "L8",
+   "title": "Ядро и загрузка",
+   "blurb": "GRUB, initramfs, модули, dmesg."
+  }
+ ]
+}

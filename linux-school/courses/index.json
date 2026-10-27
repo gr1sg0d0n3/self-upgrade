@@ -1,0 +1,42 @@
+{
+ "title": "self-upgrade",
+ "courses": [
+  {
+   "id": "linux",
+   "title": "Linux",
+   "blurb": "Команды, файлы, пакеты, процессы. Основа ALT.",
+   "status": "active",
+   "path": "linux/"
+  },
+  {
+   "id": "python",
+   "title": "Python",
+   "blurb": "Язык, который пригодится в скриптах и учёбе.",
+   "status": "soon"
+  },
+  {
+   "id": "sysadmin",
+   "title": "Системное администрирование",
+   "blurb": "Службы, сети, резервные копии.",
+   "status": "soon"
+  },
+  {
+   "id": "infosec",
+   "title": "Информационная безопасность",
+   "blurb": "Угрозы, защита, разбор инцидентов.",
+   "status": "soon"
+  },
+  {
+   "id": "devops",
+   "title": "DevOps",
+   "blurb": "Автоматизация, контейнеры, доставка.",
+   "status": "soon"
+  },
+  {
+   "id": "networks",
+   "title": "Сети",
+   "blurb": "Адреса, маршруты, DNS, устройство сетей.",
+   "status": "soon"
+  }
+ ]
+}

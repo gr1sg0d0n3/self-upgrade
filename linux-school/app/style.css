@@ -205,3 +205,8 @@ details.layer>.tlist,details.layer>.row{padding:10px 14px}
 .bars b{display:block;width:100%;align-self:end;border-radius:6px 6px 2px 2px;background:var(--accent-soft);border:1px solid var(--accent)}
 .bars .hi b{background:var(--ok-soft);border-color:var(--ok)}
 .bars .cnt{color:var(--fg)}
+
+.scrblock{display:grid;gap:10px} .scrblock p{margin:4px 0 0} .quizb{background:var(--accent-soft)}
+.chip.ok{border-color:var(--ok,#2a9d5c);background:color-mix(in srgb,var(--ok,#2a9d5c) 18%,transparent)} .chip.bad{border-color:var(--bad,#d1453b);background:color-mix(in srgb,var(--bad,#d1453b) 18%,transparent)}
+.quizb .chip{text-align:left;font-family:inherit;white-space:normal}
+.sect .pill,.cmdlist .pill{white-space:normal}

@@ -52,8 +52,8 @@
     const parts = await Promise.all(idx.layers.map((l) => fetch(base + l.file).then((r) => r.json())));
     idx.layers.forEach((l, i) => { l.topics = parts[i].topics; });
     const opt = (f) => fetch(base + f).then((r) => (r.ok ? r.json() : {})).catch(() => ({}));
-    const [rc, cm] = await Promise.all([opt('recipes.json'), opt('commands.json')]);
-    idx.recipes = rc.recipes || {}; idx.commands = cm.commands || [];
+    const [rc, cm, sc] = await Promise.all([opt('recipes.json'), opt('commands.json'), opt('scripts.json')]);
+    idx.recipes = rc.recipes || {}; idx.commands = cm.commands || []; idx.scripts = sc.scripts || [];
     idx.extracts = (await opt('extracts.json')).extracts || [];
     return idx;
   }
@@ -241,10 +241,10 @@
   }
 
   /* ---------- экраны ---------- */
-  const secOf = (a) => (a === 'home' || a === 'daily' ? 'home' : ['mistakes', 'settings', 'me', 'import'].includes(a) ? 'me' : ['cheats', 'cmds', 'sources', 'lib', 'src'].includes(a) ? 'lib' : a === 'search' ? 'search' : 'courses');
+  const secOf = (a) => (a === 'home' || a === 'daily' ? 'home' : ['mistakes', 'settings', 'me', 'import'].includes(a) ? 'me' : ['cheats', 'cmds', 'sources', 'lib', 'src', 'scripts', 'script', 'recipes'].includes(a) ? 'lib' : a === 'search' ? 'search' : 'courses');
   function libTabs(active) {
-    const t = [['sources', '#lib', 'Источники'], ['cheats', '#cheats', 'Шпаргалки'], ['cmds', '#cmds', 'Команды']];
-    const cur = active === 'src' || active === 'lib' ? 'sources' : active;
+    const t = [['sources', '#lib', 'Источники'], ['cheats', '#cheats', 'Шпаргалки'], ['cmds', '#cmds', 'Команды'], ['scripts', '#scripts', 'Скрипты'], ['recipes', '#recipes', 'Рецепты']];
+    const cur = active === 'src' || active === 'lib' ? 'sources' : active === 'script' ? 'scripts' : active;
     return el('div', { class: 'seg', role: 'tablist' }, t.map(([k, h, n]) => el('a', { href: h, class: k === cur ? 'on' : '', role: 'tab' }, n)));
   }
   function layout(active, ...kids) {
@@ -722,6 +722,69 @@
       el('div', { class: 'card' }, el('div', { class: 'eyebrow' }, 'сброс'), ask, sure));
   }
 
+
+  /* ---------- скрипты и рецепты с разбором ---------- */
+  function viewScripts() {
+    const L = C.scripts || [];
+    layout('scripts', el('div', { class: 'sect' }, el('h1', {}, 'Скрипты'), el('p', { class: 'lead' }, 'Настоящие скрипты Альты, разобранные по блокам: что делает каждый кусок и зачем он так написан. После блока можно проверить себя.')),
+      el('div', { class: 'cmdlist' }, L.map((x) => el('a', { class: 'card link', href: '#script-' + x.id },
+        el('div', { class: 'row' }, el('b', {}, x.title)),
+        el('div', { class: 'row' }, el('span', { class: 'pill' }, x.level), el('span', { class: 'pill ' + (x.mode.indexOf('только читает') === 0 ? 'ok' : 'warn') }, x.mode), el('span', { class: 'pill' }, x.blocks.length + ' ' + plural(x.blocks.length, 'блок', 'блока', 'блоков'))),
+        el('span', { class: 'small muted' }, x.intro)))),
+      el('p', { class: 'small muted' }, 'Код скриптов взят из проекта «Альта» (GPL-3.0); пояснения написаны для этого курса. Скрипты, которые меняют систему, не запускайте на рабочем компьютере, пока не поняли каждый блок.'));
+  }
+  function scriptQuiz(q, sid, n) {
+    const done = el('div', { class: 'small', 'aria-live': 'polite' }), box = el('div', { class: 'card quizb' }, el('div', { class: 'eyebrow' }, 'проверь себя'), el('div', {}, el('b', {}, ...mdNodes(q.q))));
+    const row = el('div', { class: 'chips' });
+    const order = shuffle(q.opts.map((t, i) => [t, i]));
+    order.forEach(([t, i]) => {
+      const b = el('button', { class: 'chip', type: 'button' }); b.innerHTML = md(t);
+      b.onclick = () => {
+        [...row.children].forEach((x) => { x.disabled = true; });
+        const ok = i === q.a; b.classList.add(ok ? 'ok' : 'bad');
+        if (!ok) [...row.children].forEach((x, j) => { if (order[j][1] === q.a) x.classList.add('ok'); });
+        done.innerHTML = '<b>' + (ok ? 'Верно. ' : 'Не совсем. ') + '</b>' + md(q.why);
+      };
+      row.append(b);
+    });
+    box.append(row, done); return box;
+  }
+  const mdNodes = (s) => { const d = el('span'); d.innerHTML = md(s); return [...d.childNodes]; };
+  function viewScript(id) {
+    const x = (C.scripts || []).find((z) => z.id === id);
+    if (!x) return layout('scripts', el('p', {}, 'Такого скрипта нет.'), el('a', { class: 'btn', href: '#scripts' }, 'К списку скриптов'));
+    const blocks = x.blocks.map((b, n) => {
+      const pre = el('pre', { class: 'out' }); pre.textContent = b.code;
+      const topics = (b.topics || []).filter((t) => TOPICS[t]).map((t) => el('a', { class: 'pill', href: '#topic-' + t }, TOPICS[t].title));
+      const kids = [el('div', { class: 'eyebrow' }, 'блок ' + (n + 1) + ' из ' + x.blocks.length), pre,
+        el('div', { class: 'sect' }, el('b', {}, 'Что делает'), el('p', { html: md(b.what) })),
+        el('div', { class: 'sect' }, el('b', {}, 'Зачем так'), el('p', { html: md(b.why) }))];
+      if (topics.length) kids.push(el('div', { class: 'row' }, el('span', { class: 'small muted' }, 'Повторить:'), ...topics));
+      if (b.quiz) kids.push(scriptQuiz(b.quiz, x.id, n));
+      return el('div', { class: 'card scrblock' }, ...kids);
+    });
+    const usage = el('pre', { class: 'out' }); usage.textContent = '$ ' + x.usage;
+    layout('script', el('div', { class: 'crumbs' }, el('a', { href: '#scripts' }, 'скрипты'), ' / ' + x.id),
+      el('div', { class: 'sect' }, el('h1', {}, x.title), el('div', { class: 'row' }, el('span', { class: 'pill' }, x.level), el('span', { class: 'pill ' + (x.mode.indexOf('только читает') === 0 ? 'ok' : 'warn') }, x.mode)), el('p', { class: 'lead', html: md(x.intro) })),
+      el('div', { class: 'sect' }, el('div', { class: 'eyebrow' }, 'как запускают'), usage),
+      ...blocks,
+      el('div', { class: 'card' }, el('div', { class: 'eyebrow' }, 'что унести с собой'), el('ul', {}, x.recap.map((r) => el('li', {}, r)))),
+      el('p', { class: 'small muted' }, 'Источник: ' + x.source));
+  }
+  function viewRecipes() {
+    const R = Object.values(C.recipes || {});
+    const inp = el('input', { class: 'searchbox', type: 'search', placeholder: 'Название или команда', autocomplete: 'off', autocapitalize: 'off', spellcheck: 'false' });
+    const list = el('div', { class: 'cmdlist' }), cnt = el('div', { class: 'small muted' });
+    const draw = () => {
+      const w = inp.value.trim().toLowerCase();
+      const rows = R.filter((r) => !w || (r.title + ' ' + r.steps.map((x) => x.cmd + ' ' + (x.why || '')).join(' ')).toLowerCase().includes(w));
+      cnt.textContent = 'Показано: ' + rows.length + ' из ' + R.length;
+      list.innerHTML = ''; rows.forEach((r) => list.append(recipeUI(r)));
+    };
+    inp.oninput = draw; draw();
+    layout('recipes', el('div', { class: 'sect' }, el('h1', {}, 'Рецепты'), el('p', { class: 'lead' }, 'Готовые последовательности команд помощника Альты. У каждого шага есть пояснение, зачем он нужен. Команды с # выполняются от администратора. Рецепты ещё не проверены на живых компьютерах.')), inp, cnt, list);
+  }
+
   /* ---------- маршрутизация ---------- */
   function route() {
     const h = location.hash.replace(/^#/, ''); const i = h.indexOf('-'); const name = i < 0 ? h : h.slice(0, i), arg = i < 0 ? '' : h.slice(i + 1);
@@ -741,6 +804,9 @@
         case 'daily': return viewDaily();
         case 'mistakes': return viewMistakes();
         case 'cmds': return viewCmds(arg);
+        case 'scripts': return viewScripts();
+        case 'script': return viewScript(arg);
+        case 'recipes': return viewRecipes();
         case 'cheats': return viewCheats(arg);
         case 'search': return viewSearch();
         case 'sources': return viewSources();

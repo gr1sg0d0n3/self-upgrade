@@ -258,7 +258,7 @@
       el('a', { class: 'iconbtn', href: '#search', 'aria-label': 'Поиск' }, '⌕')),
       el('main', { class: 'page' }, kids),
       el('nav', { class: 'tabs', 'aria-label': 'Разделы' }, tabs.map(([k, h, n, i]) => el('a', { href: h, class: k === sec ? 'on' : '' }, el('i', { 'aria-hidden': 'true' }, i), n))));
-    window.scrollTo(0, 0);
+    window.scrollTo(0, 0); requestAnimationFrame(() => { window.scrollTo(0, 0); document.documentElement.scrollTop = 0; document.body.scrollTop = 0; });
   }
 
   function greeting() { const h = new Date().getHours(); return h < 5 ? 'Доброй ночи' : h < 12 ? 'Доброе утро' : h < 18 ? 'Добрый день' : 'Добрый вечер'; }

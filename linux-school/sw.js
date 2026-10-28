@@ -1,5 +1,5 @@
 /* Офлайн: оболочка и курс кэшируются, при наличии сети берётся свежее. Поднимайте VERSION при выпуске. */
-const VERSION = 'ls-4';
+const VERSION = 'ls-5';
 const SHELL = ['./', 'index.html', 'app/app.js', 'app/sandbox.js', 'app/style.css', 'manifest.webmanifest',
   'courses/index.json', 'courses/linux/course.json', 'courses/linux/extracts.json', 'courses/linux/L1.json', 'courses/linux/L2.json', 'courses/linux/L3.json', 'courses/linux/L4.json', 'courses/linux/recipes.json', 'courses/linux/commands.json', 'courses/linux/scripts.json',
   'icons/icon-192.png', 'icons/apple-touch-icon.png'];

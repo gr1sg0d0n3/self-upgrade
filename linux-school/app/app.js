@@ -55,6 +55,7 @@
     const [rc, cm, sc] = await Promise.all([opt('recipes.json'), opt('commands.json'), opt('scripts.json')]);
     idx.recipes = rc.recipes || {}; idx.commands = cm.commands || []; idx.scripts = sc.scripts || [];
     idx.extracts = (await opt('extracts.json')).extracts || [];
+    idx.sapr = await fetch('courses/sapr/tests.json').then((r) => (r.ok ? r.json() : null)).catch(() => null);
     return idx;
   }
   function index() {
@@ -271,6 +272,11 @@
   }
   function courseTile(c, big) {
     const act = c.status === 'active';
+    if (act && c.kind === 'tests') {
+      const Q = allQ(), l = Q.filter((q) => learned(q.id)).length, pct = Q.length ? Math.round(l * 100 / Q.length) : 0;
+      return el('a', { class: 'card link tile', href: '#tests' }, el('div', { class: 'row' }, el('b', { class: 'mono' }, c.title), el('span', { class: 'sp' }), el('span', { class: 'pill ok' }, 'тесты')),
+        el('span', { class: 'small muted' }, c.blurb), meter(pct), el('span', { class: 'small muted' }, 'Выучено вопросов ' + l + ' из ' + Q.length));
+    }
     const st = act ? (() => { const n = ALL.length, l = ALL.filter((r) => learned(r.it.id)).length; return { n, l, pct: n ? Math.round(l * 100 / n) : 0 }; })() : null;
     const kids = [el('div', { class: 'row' }, el('b', { class: 'mono' }, c.title), el('span', { class: 'sp' }), el('span', { class: 'pill' + (act ? ' ok' : '') }, act ? 'идёт' : 'скоро'))];
     if (big || act) kids.push(el('span', { class: 'small muted' }, c.blurb));
@@ -723,6 +729,123 @@
   }
 
 
+
+  /* ---------- курс из тестов (САПР) ---------- */
+  const allQ = () => (C.sapr ? C.sapr.tests.flatMap((t) => t.questions.map((q) => Object.assign({ t: t.id }, q))) : []);
+  const tImg = (q) => (/^data:/.test(q.img) ? q.img : 'courses/sapr/' + q.img);
+  const TYPE_NAME = { one: 'один ответ', multi: 'несколько ответов', text: 'ввести ответ', order: 'расставить по порядку', match: 'установить соответствие' };
+  const normT = (x) => String(x).trim().toLowerCase().replace(/ё/g, 'е').replace(/\s+/g, ' ');
+  const gradeOf = (pct) => (pct >= (C.sapr.pass_pct || 90) ? '5' : '');
+  function answerUI(q) {
+    if (q.type === 'one' || q.type === 'multi') return el('ul', { class: 'qopts' }, q.opts.map((o, i) => el('li', { class: q.ok.includes(i) ? 'okopt' : 'noopt' }, el('span', { class: 'mk' }, q.ok.includes(i) ? '✔' : '○'), o)));
+    if (q.type === 'text') return el('div', { class: 'okopt' }, el('span', { class: 'mk' }, '✔'), q.answer);
+    if (q.type === 'order') return el('ol', { class: 'qopts' }, q.order.map((o) => el('li', { class: 'okopt' }, o)));
+    return el('ul', { class: 'qopts' }, q.pairs.map((p) => el('li', { class: 'okopt' }, el('b', {}, p[0]), ' → ', p[1])));
+  }
+  function qHead(q, extra) {
+    return [el('div', { class: 'row' }, el('span', { class: 'pill' }, (q.t || '') + (q.t ? ' · ' : '') + '№ ' + q.n), el('span', { class: 'pill' }, TYPE_NAME[q.type]), extra || null),
+      el('div', { class: 'qtext' }, q.q), q.img ? el('img', { class: 'qimg', src: tImg(q), alt: q.alt || 'Рисунок к вопросу', loading: 'lazy' }) : null];
+  }
+  function viewTests() {
+    const S0 = C.sapr; if (!S0) return layout('courses', el('p', {}, 'Курс не загружен.'));
+    const Q = allQ(), errs = Q.filter((q) => S.items[q.id] && S.items[q.id].wrong > 0 && S.items[q.id].box < 4);
+    const card = (t) => {
+      const l = t.questions.filter((q) => learned(q.id)).length, e = S.exams['sapr-' + t.id], pic = t.questions.filter((q) => q.img).length;
+      return el('div', { class: 'card tcard' }, el('b', {}, t.title),
+        el('div', { class: 'row' }, el('span', { class: 'pill' }, t.questions.length + ' ' + plural(t.questions.length, 'вопрос', 'вопроса', 'вопросов')), pic ? el('span', { class: 'pill' }, pic + ' с рисунком') : null,
+          e ? el('span', { class: 'pill ' + (e.best >= S0.pass_pct ? 'ok' : 'warn') }, 'лучший ' + e.best + '%' + (e.best >= S0.pass_pct ? ' · «5»' : '')) : el('span', { class: 'pill' }, 'не сдавался')),
+        meter(Math.round(l * 100 / t.questions.length)), el('span', { class: 'small muted' }, 'Выучено ' + l + ' из ' + t.questions.length),
+        el('div', { class: 'row' }, el('a', { class: 'btn', href: '#tstudy-' + t.id }, 'Изучить ответы'), el('a', { class: 'btn pri', href: '#trun-' + t.id }, 'Пройти тест')));
+    };
+    layout('tests', el('div', { class: 'crumbs' }, el('a', { href: '#courses' }, 'курсы'), ' / ' + S0.title),
+      el('div', { class: 'sect' }, el('h1', {}, S0.title), el('p', { class: 'lead' }, 'Тесты по лекциям 3–6. Сначала изучите правильные ответы, затем пройдите тест. Оценка «5» ставится от ' + S0.pass_pct + '%. Частично верный выбор засчитывается частично.')),
+      el('div', { class: 'cmdlist' }, S0.tests.map(card)),
+      el('div', { class: 'card tcard' }, el('b', {}, 'Всё вместе'), el('span', { class: 'small muted' }, 'Вопросы из всех четырёх тестов вперемешку.'),
+        el('div', { class: 'row' }, el('a', { class: 'btn pri', href: '#trun-mix' }, 'Случайные 20'), errs.length ? el('a', { class: 'btn', href: '#trun-err' }, 'Работа над ошибками · ' + errs.length) : el('span', { class: 'small muted' }, 'Ошибок пока нет'))));
+  }
+  function viewTestStudy(id) {
+    const t = C.sapr && C.sapr.tests.find((x) => x.id === id);
+    if (!t) return layout('tests', el('p', {}, 'Такого теста нет.'), el('a', { class: 'btn', href: '#tests' }, 'К тестам'));
+    const list = el('div', { class: 'cmdlist' }), cnt = el('div', { class: 'small muted' });
+    const hideBtn = el('button', { class: 'btn', type: 'button' }, 'Скрыть ответы (проверить себя)');
+    const inp = el('input', { class: 'searchbox', type: 'search', placeholder: 'Поиск по вопросам', autocomplete: 'off', spellcheck: 'false' });
+    const draw = () => {
+      const w = inp.value.trim().toLowerCase(); list.innerHTML = '';
+      const rows = t.questions.filter((q) => !w || (q.q + ' ' + (q.opts || []).join(' ') + ' ' + (q.answer || '') + ' ' + (q.order || []).join(' ') + ' ' + (q.pairs || []).join(' ')).toLowerCase().includes(w));
+      cnt.textContent = 'Показано: ' + rows.length + ' из ' + t.questions.length + ' · выучено ' + t.questions.filter((q) => learned(q.id)).length;
+      rows.forEach((q) => {
+        const know = el('button', { class: 'btn', type: 'button' });
+        const paint = () => { know.textContent = learned(q.id) ? '✓ Знаю' : 'Отметить «знаю»'; know.classList.toggle('on', learned(q.id)); };
+        know.onclick = () => { if (learned(q.id)) { delete S.items[q.id]; save(); syncSoon(); } else setLearned(q.id); paint(); cnt.textContent = 'Показано: ' + rows.length + ' из ' + t.questions.length + ' · выучено ' + t.questions.filter((z) => learned(z.id)).length; };
+        paint();
+        const card = el('div', { class: 'card qcard' }, ...qHead(q), el('div', { class: 'ans' }, answerUI(q)),
+          el('div', { class: 'row' }, el('button', { class: 'btn showb', type: 'button', onclick: (e) => { card.classList.toggle('open'); e.target.textContent = card.classList.contains('open') ? 'Скрыть ответ' : 'Показать ответ'; } }, 'Показать ответ'), know));
+        list.append(card);
+      });
+    };
+    hideBtn.onclick = () => { const h = list.classList.toggle('hide'); hideBtn.textContent = h ? 'Показать все ответы' : 'Скрыть ответы (проверить себя)'; };
+    inp.oninput = draw; draw();
+    layout('tests', el('div', { class: 'crumbs' }, el('a', { href: '#courses' }, 'курсы'), ' / ', el('a', { href: '#tests' }, C.sapr.title), ' / изучение'),
+      el('div', { class: 'sect' }, el('h1', {}, t.title), el('p', { class: 'lead' }, 'Правильные ответы отмечены ✔. Прочитайте их, отметьте выученное и переходите к тесту.'), ...(t.notes || []).map((n) => el('p', { class: 'small muted' }, n))),
+      el('div', { class: 'row' }, hideBtn, el('a', { class: 'btn pri', href: '#trun-' + t.id }, 'Пройти тест')), inp, cnt, list);
+  }
+  function viewTestRun(spec) {
+    const sp = C.sapr; if (!sp) return;
+    let pool, title, key = null;
+    if (spec === 'mix') { pool = shuffle(allQ()).slice(0, 20); title = 'Случайные 20'; }
+    else if (spec === 'err') { pool = shuffle(allQ().filter((q) => S.items[q.id] && S.items[q.id].wrong > 0 && S.items[q.id].box < 4)).slice(0, 20); title = 'Работа над ошибками'; }
+    else { const t = sp.tests.find((x) => x.id === spec); if (!t) return layout('tests', el('p', {}, 'Такого теста нет.')); pool = shuffle(t.questions.map((q) => Object.assign({ t: t.id }, q))); title = t.title; key = 'sapr-' + t.id; }
+    if (!pool.length) return layout('tests', el('p', {}, 'Вопросов для этого режима нет.'), el('a', { class: 'btn', href: '#tests' }, 'К тестам'));
+    const host = el('div', { id: 'sess' });
+    layout('tests', el('div', { class: 'crumbs' }, el('a', { href: '#courses' }, 'курсы'), ' / ', el('a', { href: '#tests' }, sp.title), ' / тест'), host);
+    let i = 0; const res = [];
+    const step = () => {
+      if (i >= pool.length) return done();
+      const q = pool[i]; host.innerHTML = '';
+      const get = {}; let body;
+      if (q.type === 'one' || q.type === 'multi') {
+        const ord = shuffle(q.opts.map((o, k) => k)), on = new Set();
+        body = el('div', { class: 'qpick' }, ord.map((k) => { const b = el('button', { type: 'button', class: 'opt', 'aria-pressed': 'false' }, q.opts[k]); b.onclick = () => { if (q.type === 'one') { on.clear(); [...body.children].forEach((x) => { x.classList.remove('on'); x.setAttribute('aria-pressed', 'false'); }); } if (on.has(k)) on.delete(k); else on.add(k); b.classList.toggle('on', on.has(k)); b.setAttribute('aria-pressed', String(on.has(k))); }; return b; }));
+        get.val = () => { const hit = [...on].filter((k) => q.ok.includes(k)).length, miss = on.size - hit; return q.type === 'one' ? (on.size === 1 && q.ok.includes([...on][0]) ? 1 : 0) : Math.max(0, (hit - miss) / q.ok.length); };
+      } else if (q.type === 'text') {
+        const inp = el('input', { class: 'searchbox', type: 'text', placeholder: 'Ваш ответ', autocomplete: 'off', autocapitalize: 'off', spellcheck: 'false' }); body = inp;
+        get.val = () => (normT(inp.value) === normT(q.answer) ? 1 : 0);
+      } else if (q.type === 'order') {
+        const picked = [], pool2 = shuffle(q.order.slice()), box = el('ol', { class: 'qopts picked' }), src = el('div', { class: 'qpick' });
+        const draw = () => { box.innerHTML = ''; picked.forEach((t, k) => box.append(el('li', {}, el('button', { type: 'button', class: 'opt on', onclick: () => { picked.splice(k, 1); draw(); } }, t)))); src.innerHTML = ''; pool2.filter((t) => !picked.includes(t)).forEach((t) => src.append(el('button', { type: 'button', class: 'opt', onclick: () => { picked.push(t); draw(); } }, t))); };
+        draw(); body = el('div', {}, el('div', { class: 'small muted' }, 'Нажимайте пункты по порядку. Нажатие на выбранный пункт убирает его.'), box, src);
+        get.val = () => { let ok = 0; q.order.forEach((t, k) => { if (picked[k] === t) ok++; }); return ok / q.order.length; };
+      } else {
+        const rights = shuffle(q.pairs.map((p) => p[1])), sels = [];
+        body = el('div', { class: 'qmatch' }, q.pairs.map((p) => { const s = el('select', { class: 'searchbox' }, el('option', { value: '' }, 'выберите…'), rights.map((r) => el('option', { value: r }, r))); sels.push(s); return el('label', { class: 'mrow' }, el('b', {}, p[0]), s); }));
+        get.val = () => sels.filter((s, k) => s.value === q.pairs[k][1]).length / q.pairs.length;
+      }
+      const fb = el('div', { class: 'qfb', 'aria-live': 'polite' }), check = el('button', { class: 'btn pri', type: 'button' }, 'Проверить');
+      check.onclick = () => {
+        const f = get.val(), ok = f === 1; res.push({ q, f }); record(q.id, ok);
+        [...host.querySelectorAll('button.opt,input,select')].forEach((x) => { x.disabled = true; });
+        fb.className = 'qfb ' + (ok ? 'good' : 'bad');
+        fb.append(el('b', {}, ok ? 'Верно.' : f > 0 ? 'Частично верно: ' + Math.round(f * 100) + '%.' : 'Неверно.'), el('div', { class: 'small muted' }, 'Правильный ответ:'), answerUI(q));
+        check.remove(); host.append(el('button', { class: 'btn pri', type: 'button', onclick: () => { i++; step(); } }, i + 1 >= pool.length ? 'Результат' : 'Дальше ›'));
+      };
+      host.append(el('div', { class: 'row' }, el('span', { class: 'small muted' }, title + ' · ' + (i + 1) + ' из ' + pool.length)), meter(Math.round(i * 100 / pool.length)),
+        el('div', { class: 'card qcard' }, ...qHead(q), body), fb, check);
+      window.scrollTo(0, 0);
+    };
+    const done = () => {
+      const pct = Math.round(res.reduce((a, r) => a + r.f, 0) * 100 / res.length), wrong = res.filter((r) => r.f < 1);
+      if (key) { const prev = S.exams[key] || { best: 0 }; S.exams[key] = { best: Math.max(prev.best, pct), at: Date.now() }; save(); syncSoon(); }
+      const g = key ? gradeOf(pct) : '';
+      host.innerHTML = '';
+      host.append(el('div', { class: 'card tcard' }, el('div', { class: 'eyebrow' }, 'результат'), el('h1', {}, pct + '%' + (g ? ' · «' + g + '»' : '')),
+        el('p', {}, 'Верно полностью: ' + (res.length - wrong.length) + ' из ' + res.length + (key ? (g ? '. Порог «5» пройден.' : '. До «5» нужно ' + sp.pass_pct + '%.') : '.')), meter(pct),
+        el('div', { class: 'row' }, el('a', { class: 'btn pri', href: '#trun-' + spec, onclick: () => setTimeout(route, 0) }, 'Ещё раз'), el('a', { class: 'btn', href: '#tests' }, 'К тестам'), key ? el('a', { class: 'btn', href: '#tstudy-' + spec }, 'Изучить ответы') : null)),
+        wrong.length ? el('div', { class: 'sect' }, el('div', { class: 'eyebrow' }, 'разбор ошибок · ' + wrong.length), el('div', { class: 'cmdlist' }, wrong.map((r) => el('div', { class: 'card qcard' }, ...qHead(r.q), el('div', { class: 'small muted' }, 'Правильный ответ:'), answerUI(r.q))))) : el('p', { class: 'lead' }, 'Без ошибок. Отличный результат.'));
+      window.scrollTo(0, 0);
+    };
+    step();
+  }
+
   /* ---------- скрипты и рецепты с разбором ---------- */
   function viewScripts() {
     const L = C.scripts || [];
@@ -804,6 +927,9 @@
         case 'daily': return viewDaily();
         case 'mistakes': return viewMistakes();
         case 'cmds': return viewCmds(arg);
+        case 'tests': return viewTests();
+        case 'tstudy': return viewTestStudy(arg);
+        case 'trun': return viewTestRun(arg);
         case 'scripts': return viewScripts();
         case 'script': return viewScript(arg);
         case 'recipes': return viewRecipes();

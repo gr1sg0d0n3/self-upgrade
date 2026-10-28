@@ -35,4 +35,25 @@ for l in idx["layers"]:
             else: bad(f"{i}: неизвестный тип {ty}")
 print("ошибок:", len(errs)); [print(" -", e) for e in errs]
 print("заданий:", len(ids))
+
+# --- курс из тестов (САПР)
+sp = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "courses", "sapr", "tests.json")
+if os.path.exists(sp):
+    d = json.load(open(sp, encoding="utf-8")); e2 = []
+    seen = set()
+    for t in d["tests"]:
+        for q in t["questions"]:
+            i = q["id"]
+            if i in seen: e2.append(f"{i}: повтор id")
+            seen.add(i)
+            ty = q["type"]
+            if ty in ("one", "multi"):
+                if not q["ok"] or any(not (0 <= k < len(q["opts"])) for k in q["ok"]): e2.append(f"{i}: нет верного ответа")
+                if ty == "one" and len(q["ok"]) != 1: e2.append(f"{i}: у «один ответ» верных {len(q['ok'])}")
+            elif ty == "text" and not q.get("answer"): e2.append(f"{i}: пустой ответ")
+            elif ty == "order" and len(q.get("order", [])) < 2: e2.append(f"{i}: порядок короче двух")
+            elif ty == "match" and len(q.get("pairs", [])) < 2: e2.append(f"{i}: соответствий меньше двух")
+            if q.get("img") and not os.path.exists(os.path.join(os.path.dirname(sp), q["img"])): e2.append(f"{i}: нет файла рисунка")
+    print("тесты САПР: вопросов", len(seen), "ошибок", len(e2)); [print(" -", x) for x in e2]
+    if e2: sys.exit(1)
 sys.exit(1 if errs else 0)

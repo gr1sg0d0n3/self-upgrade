@@ -210,3 +210,12 @@ details.layer>.tlist,details.layer>.row{padding:10px 14px}
 .chip.ok{border-color:var(--ok,#2a9d5c);background:color-mix(in srgb,var(--ok,#2a9d5c) 18%,transparent)} .chip.bad{border-color:var(--bad,#d1453b);background:color-mix(in srgb,var(--bad,#d1453b) 18%,transparent)}
 .quizb .chip{text-align:left;font-family:inherit;white-space:normal}
 .sect .pill,.cmdlist .pill{white-space:normal}
+
+.tcard{display:grid;gap:8px} .qcard{display:grid;gap:10px} .qtext{font-size:16px;line-height:1.5} .qimg{max-width:100%;height:auto;border-radius:8px;border:1px solid var(--line);background:#fff;justify-self:start}
+.qopts{list-style:none;margin:0;padding:0;display:grid;gap:6px} ol.qopts{list-style:decimal;padding-left:22px} .qopts li{display:flex;gap:8px}
+.okopt{color:var(--ok);font-weight:500} .noopt{color:var(--muted)} .mk{font-family:var(--f-mono)}
+.qpick{display:grid;gap:8px} .opt{font:14px/1.4 var(--f-text);text-align:left;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:11px 12px;color:var(--fg)}
+.opt.on{border-color:var(--accent);background:var(--accent-soft)} .opt:disabled{opacity:.8}
+.qfb{display:grid;gap:6px;padding:0} .qfb.good,.qfb.bad{padding:12px;border-radius:8px;border:1px solid} .qfb.good{border-color:var(--ok)} .qfb.bad{border-color:var(--bad,#e5534b)}
+.qmatch{display:grid;gap:10px} .mrow{display:grid;gap:4px}
+.hide .qcard:not(.open) .ans{display:none} .btn.on{border-color:var(--ok);color:var(--ok)}
